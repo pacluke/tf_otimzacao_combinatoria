@@ -25,6 +25,24 @@
 
 ############################### - AUXILIARY FUNCTIONS - ##############################################
 
+##############################################################
+#
+#   edge_weight(x1, y1, x2, y2) -> float
+#  
+#   given the coordinates of two points, returns
+#   the euclidean distance between them.
+# 
+##############################################################
+
+function edge_weight(node_a, node_b)
+  x1 = node_a[1]
+  y1 = node_a[2]
+  x2 = node_b[1]
+  y2 = node_b[2]
+  x1_x2 = (x1 - x2)^2
+  y1_y2 = (y1 - y2)^2
+  return sqrt(x1_x2 + y1_y2)
+end
 
 ##############################################################
 #
@@ -76,23 +94,34 @@ function parse_file(file_name)
     end
   end
 
-  return GRAPH
+  FULL_GRAPH = Dict()
+
+  push!(FULL_GRAPH, (0 => Int64[]))
+
+  for i in 1:length(GRAPH)-1
+    if i != 0
+      push!(FULL_GRAPH[0], GRAPH[i][3])
+    end
+  end
+
+  for (key, value) in GRAPH
+    if key != 0
+      push!(FULL_GRAPH, (key => Float64[]))
+      for i in 1:length(GRAPH)-1 
+        if key != i
+            push!(FULL_GRAPH[key], edge_weight(GRAPH[key], GRAPH[i]))
+        else 
+            push!(FULL_GRAPH[key], 999999.9999999999)
+        end
+      end
+    end
+  end
+
+  push!(FULL_GRAPH, length(FULL_GRAPH) => GRAPH[0])
+
+  return FULL_GRAPH
 end
 
-##############################################################
-#
-#   edge_weight(x1, y1, x2, y2) -> float
-#  
-#   given the coordinates of two points, returns
-#   the euclidean distance between them.
-# 
-##############################################################
-
-function edge_weight(x1, y1, x2, y2)
-  x1_x2 = (x1 - x2)^2
-  y1_y2 = (y1 - y2)^2
-  return sqrt(x1_x2 + y1_y2)
-end
 
 ##############################################################
 #
@@ -103,12 +132,17 @@ end
 ##############################################################
 
 function route_weight(route, graph)
-  previous_node = graph[route[1]]
   total_weight = 0.0
-  for node in route
-    current_node = graph[node]
-    total_weight += edge_weight(previous_node[1], previous_node[2], current_node[1], current_node[2])
-    previous_node = graph[node]
+  node_a = 0
+  node_b = 0
+  for i in 1:length(route)
+    if i != length(route)
+      node_a = route[i]
+      node_b = route[i+1]
+    end
+    total_weight += graph[node_a][node_b]
+    # println(total_weight)
+    # println(graph[node_a][node_b])
   end
   return total_weight
 end
@@ -122,38 +156,83 @@ end
 ##############################################################
 
 function route_nodes_weight(route, graph)
-  total_weight = 0.0
-  for node in route
-    total_weight += graph[node][3]
-  end
-  return total_weight
+  # total_weight = 0.0
+  # node_a = route[1]
+  # node_b = route[2]
+  # for i in lenght(route)
+  #   total_weight += graph[node_a][node_b]
+  #   node_a = node_b
+  #   node_b = route[i+1]
+  # end
+  # return total_weight
 end
 
 
-function random_solution(seed, num_of_nodes, graph)
-  srand(seed)
-  solution = unique(rand(2:num_of_nodes, num_of_nodes-1))
-  push!(solution, 1)
-  solution = append!([1], solution)
-  solution_weight = route_weight(solution, graph)
+function initial_solution(graph)
 
+  aux_graph = deepcopy(graph)
+
+  solution = [1]
   println(solution)
-  println(solution_weight)
+
+  minimum_index = 1
+  current_node = 1
+
+  for i in 2:length(graph)-2
+    minimum_index = indmin(aux_graph[current_node])
+    println(minimum_index)
+    if minimum_index in solution
+      while minimum_index in solution
+          aux_graph[current_node][minimum_index] = 999999.9999999999
+          minimum_index = indmin(aux_graph[current_node])
+      end
+    end
+    push!(solution, minimum_index)
+    current_node = minimum_index
+  end
+  push!(solution, 1)
+  println(solution)
+
+
+  println("FIRST METHOD")
+  initial_solution_weight = route_weight(solution, graph)
+  println(initial_solution_weight)
+
+  ########################################################################
+
+  aux_graph = deepcopy(graph)
+
+  solution = [1]
+  println(solution)
+  
+
+  println(aux_graph[0])
+
+  for i in 2:length(graph)-2
+    current_best = indmax(aux_graph[0])
+    push!(solution, indmax(aux_graph[0]))
+    aux_graph[0][current_best] = -1
+  end
+
+  println(aux_graph[0])
   println(graph[0])
 
-  while graph[0] < solution_weight
-    solution = deleteat!(solution, length(solution) - 1)
-    solution_weight = route_weight(solution, graph)
-    println(solution)
-    println(solution_weight)
-  end
-  
+  push!(solution, 1)
+  println(solution)
+
+  println("SECOND METHOD")
+  initial_solution_weight = route_weight(solution, graph)
+  println(initial_solution_weight)
+
+
   return solution
 end
 
-function two_opt()
+
+
+# function two_opt()
     
-end
+# end
 
 
 ############################### - MAIN - #############################################################
@@ -170,23 +249,34 @@ function main()
   GRAPH = parse_file(file_name)
 
   # printing the graph data structure
-  println("MAXIMUM ROUTE COST =>\t $(GRAPH[0])\n")
-  for (key, value) in GRAPH
-    if key != 0
-      println("$key\t =>\t $value")
+
+  println("MAXIMUM COST OF THE OPTIMAL ROUTE: $(GRAPH[length(GRAPH)-1])\n")
+  println("NODES WEIGHT: $(GRAPH[0])\n")
+
+  for j in 0:length(GRAPH)-1
+    if (j != 0) && (j != length(GRAPH)-1)
+      # println("$key\t =>\t $value")
+      for i in 1:length(GRAPH[j])
+        println("WEIGHT OF EDGE ($j -> $i): $(GRAPH[j][i])")
+      end
     end
   end
 
-  sol = random_solution(seed, length(GRAPH)-1, GRAPH)
-  println("initial solution: $sol")
+  println("\n")
 
-  sol_weight = route_nodes_weight(sol, GRAPH)
-  println("initial solution value: $sol_weight")
+  initial_solution(GRAPH)
+
+  println(GRAPH[0])
+
+  # sol = random_solution(seed, length(GRAPH)-1, GRAPH)
+  # println("initial solution: $sol")
+
+  # sol_weight = route_nodes_weight(sol, GRAPH)
+  # println("initial solution value: $sol_weight")
 
 end
 
 main()
-
 
 
 
