@@ -1,6 +1,5 @@
 
 # DATA STRUCTUTE
-
 struct Point
     x :: Number
     y :: Number
@@ -41,6 +40,14 @@ function edge_weight(node_a, node_b)
     return sqrt(x1_x2 + y1_y2)
 end
 
+##############################################################
+#
+#   parse_file(file_name) -> Instance
+#  
+#   given a file, parse_file reads the file and set
+#   the instance data structure.
+# 
+##############################################################
 
 function parse_file(file_name)
 
@@ -87,35 +94,12 @@ function parse_file(file_name)
         end
     end
 
-    for item in nodes
-        println("Node: $(item.value)\n\tInfo: (x: $(item.coordinate.x), y: $(item.coordinate.x)), Weight: $(item.weight)")
-    end
-
     for node_a in nodes
         line_matrix = []
         for node_b in nodes
             push!(line_matrix, edge_weight(node_a, node_b))
         end
         push!(adjacency_matrix, line_matrix)
-    end
-
-    line = 0
-    for i in 0:length(adjacency_matrix)
-        if i == 0
-            for k in 1:length(adjacency_matrix)
-                print("\t$k")
-            end    
-        else
-            for j in 0:length(adjacency_matrix)
-                if j == 0
-                    line += 1
-                    print(line)
-                else
-                    print("\t$(ceil(adjacency_matrix[i][j]))")
-                end
-            end
-        end
-        print("\n")
     end
 
     full_graph = Graph(adjacency_matrix, nodes)
@@ -125,13 +109,260 @@ function parse_file(file_name)
 end
 
 
+function print_instance(instance)
 
-parse_file(ARGS[1])
+    print("\n\n")
+
+    for item in instance.graph.nodes
+        println("Node: $(item.value) => Info: (x: $(item.coordinate.x), y: $(item.coordinate.x)), Weight: $(item.weight)\n")
+    end
+
+    line = 0
+    for i in 0:length(instance.graph.edges)
+        if i == 0
+            for k in 1:length(instance.graph.edges)
+                print("\t$k")
+            end    
+        else
+            for j in 0:length(instance.graph.edges)
+                if j == 0
+                    line += 1
+                    print(line)
+                else
+                    print("\t$(ceil(instance.graph.edges[i][j]))")
+                end
+            end
+        end
+        print("\n")
+    end
+
+    # print("\n")
+    # print("\n")
+
+    # for i in -8:-5
+    #     println(abs(i))
+    # end
+
+    # print("\n")
+    # print("\n")
+
+    print("\n\n")
+end
+
+
+function respects_maximum_weight(instance, route)
+
+    total_weight = 0
+    maximum_weight = instance.max_route_cost
+    edge_weight = instance.graph.edges
+
+    node_a = 0
+    node_b = 0
+
+    for i in 1:length(route)
+        if i != length(route)
+            node_a = route[i]
+            node_b = route[i+1]
+        end
+        total_weight += edge_weight[node_a][node_b]
+    end
+
+    if total_weight <= maximum_weight
+        println(total_weight)
+        return true
+    end
+
+    return false
+end
+
+function route_value(instance, route)
+
+    nodes = deepcopy(instance.graph.nodes)
+    total_value = 0
+
+    for i in 1:length(route)
+        total_value += nodes[route[i]].weight
+    end
+    return total_value
+
+end
+
+
+function initial_solution_one(instance)
+
+    aux_inst = deepcopy(instance.graph.edges)
+
+    solution = [1]
+
+    minimum_index = 1
+    current_node = 1
+
+    for i in 2:length(aux_inst)
+        minimum_index = indmin(aux_inst[current_node])
+        # println(minimum_index)
+        if minimum_index in solution
+            while minimum_index in solution
+                aux_inst[current_node][minimum_index] = 999999.9999999999
+                minimum_index = indmin(aux_inst[current_node])
+            end
+        end
+        push!(solution, minimum_index)
+        current_node = minimum_index
+    end
+    push!(solution, 1)
+
+    println("\n\nFIRST METHOD")
+    initial_solution_weight = respects_maximum_weight(instance, solution)
+    println("Solution: $solution => situation: $initial_solution_weight")
+
+  ########################################################################
+
+  return solution
+end
+
+function initial_solution_two(instance)
+
+    aux_graph = deepcopy(instance.graph.nodes)
+
+    solution = [1]
+    weights = []
+
+    # println(solution)
+
+    for i in 1:length(aux_graph)
+        push!(weights, aux_graph[i].weight)
+    end
+
+    for i in 2:length(weights)
+        current_best = indmax(weights)
+        push!(solution, indmax(weights))
+        weights[current_best] = -1
+    end
+
+    push!(solution, 1)
+
+    println("\n\nSECOND METHOD")
+    initial_solution_weight = respects_maximum_weight(instance, solution)
+    println("Solution: $solution => situation: $initial_solution_weight")
+
+    return solution
+end
+
+
+function two_opt_swap(route, node_a, node_b)
+    new_route = []
+    for i in 1:node_a-1
+        push!(new_route, route[i])
+    end
+    for i in -node_b:-node_a 
+        push!(new_route, route[abs(i)])
+    end
+    for i in node_b+1:length(route)
+        push!(new_route, route[i])
+    end
+    return new_route
+end
+
+
+
+# function shake(instance, route)
+#     new_route = []
+#     return new_route
+# end
+
+# function insert_node(instance, route)
+#     new_route = []
+#     return new_route
+# end
+
+# function remove_node(instance, route)
+#     new_route = []
+#     return new_route    
+# end
+
+# function random_neighbour(instance, route, neighborhood)
+
+#     graph = deepcopy(instance.graph)
+#     neighbour = []
+
+#     return neighbour
+
+# end
+
+# function local_search(solution)
+# end
+
+# function shake()
+# end
+
+# function VND(instance, initial_solution, max_neighborhoods)
+
+#     best_solution = initial_solution
+#     k = 1
+
+#     while k <= max_neighborhoods
+#         best_neighbour = local_search(best_solution)
+
+#         if (route_value(instance, best_neighbour)) < (route_value(instance, best_solution))
+#             best_solution = best_neighbour
+#             k = 1
+#         else
+#             k += 1
+#         end 
+#     end
+#     return best_solution
+# end
+
+
+# function VNS(instance, initial_solution, max_neighborhoods, max_iterations)
+
+#     for i in 1:max_iterations
+#         k = 1
+#         while k <= max_neighborhoods
+#             x1 = random_neighbour()
+#             x2 = VND()
+#             if (route_value(instance, x2)) < (route_value(instance, x1))
+#                 initial_solution = x2
+#                 k = 1
+#             else
+#                 k += 1
+#             end
+#         end
+#     end
+# end
 
 
 
 
 
 
+
+srand(1)
+
+inst = parse_file(ARGS[1])
+
+# print_instance(inst)
+
+# while !respects_maximum_weight(inst, route)
+#     deleteat!(route, length(route)-1)
+# end
+
+
+
+route_1 = reverse(initial_solution_one(inst))
+while !respects_maximum_weight(inst, route_1)
+    deleteat!(route_1, length(route_1)-1)
+end
+
+route_2 = reverse(initial_solution_two(inst))
+while !respects_maximum_weight(inst, route_2)
+    deleteat!(route_2, length(route_2)-1)
+end
+
+println("\n\n")
+println("Route 01: $(length(route_1)) => situation: $(respects_maximum_weight(inst, route_1)) and value: $(route_value(inst, route_1))")
+println("\n\n")
+println("Route 02: $(length(route_2)) => situation: $(respects_maximum_weight(inst, route_2)) and value: $(route_value(inst, route_2))")
+println("\n\n")
 
 
