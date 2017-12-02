@@ -115,16 +115,6 @@ function print_instance(instance)
         print("\n")
     end
 
-    # print("\n")
-    # print("\n")
-
-    # for i in -8:-5
-    #     println(abs(i))
-    # end
-
-    # print("\n")
-    # print("\n")
-
     print("\n\n")
 end
 
@@ -154,6 +144,26 @@ function respects_maximum_weight(instance, route)
     return false
 end
 
+function route_maximum_weight(instance, route)
+
+    total_weight = 0
+    maximum_weight = instance.max_route_cost
+    edge_weight = instance.graph.edges
+
+    node_a = 0
+    node_b = 0
+
+    for i in 1:length(route)
+        if i != length(route)
+            node_a = route[i]
+            node_b = route[i+1]
+        end
+        total_weight += edge_weight[node_a][node_b]
+    end
+
+    return total_weight
+end
+
 function route_value(instance, route)
 
     nodes = deepcopy(instance.graph.nodes)
@@ -171,28 +181,35 @@ function initial_solution_one(instance)
 
     aux_inst = deepcopy(instance.graph.edges)
 
+    # solution = [1]
+
+    # minimum_index = 1
+    # current_node = 1
+
+    # for i in 2:length(aux_inst)
+    #     minimum_index = indmin(aux_inst[current_node])
+    #     # println(minimum_index)
+    #     if minimum_index in solution
+    #         while minimum_index in solution
+    #             aux_inst[current_node][minimum_index] = 999999.9999999999
+    #             minimum_index = indmin(aux_inst[current_node])
+    #         end
+    #     end
+    #     push!(solution, minimum_index)
+    #     current_node = minimum_index
+    # end
+    # push!(solution, 1)
+
     solution = [1]
-
-    minimum_index = 1
-    current_node = 1
-
-    for i in 2:length(aux_inst)
-        minimum_index = indmin(aux_inst[current_node])
-        # println(minimum_index)
-        if minimum_index in solution
-            while minimum_index in solution
-                aux_inst[current_node][minimum_index] = 999999.9999999999
-                minimum_index = indmin(aux_inst[current_node])
-            end
-        end
-        push!(solution, minimum_index)
-        current_node = minimum_index
-    end
-    push!(solution, 1)
+    append!(solution, shuffle(2:length(instance.graph.nodes)))
+    append!(solution, [1])
 
   ########################################################################
     while !respects_maximum_weight(inst, solution)
         deleteat!(solution, length(solution)-1)
+        # solution = [1]
+        # append!(solution, shuffle(2:length(instance.graph.nodes)))
+        # append!(solution, [1])
     end
 
     # println("\n\nFIRST METHOD")
@@ -218,6 +235,49 @@ function two_opt_swap(route, node_a, node_b)
 end
 
 
+function insert_at(route, where, node_a)
+
+    new_route = []
+
+    route_part1 = route[1:where]
+    route_part2 = route[where+1:length(route)]
+
+    new_route = append!(route_part1, [node_a])
+    new_route = append!(new_route, route_part2)
+
+    return new_route
+
+end
+
+function remove_at(route, node_a)
+
+    new_route = []
+
+    for i in route
+        if i != node_a
+            push!(new_route, i)
+        end
+    end
+
+    return new_route
+
+end
+
+function shuffle_route(route)
+
+    shuffled = shuffle(route[2:length(route)-1])
+
+    shuffled = append!([1], shuffled)
+
+    shuffled = push!(shuffled, 1)
+
+    # println(shuffled)
+
+    return shuffled
+
+end
+
+
 function not_on_the_route(instance, route)
     not_used = []
     for i in 2:length(instance.graph.nodes)
@@ -230,105 +290,56 @@ end
 
 
 function shake(instance, route, neighbourhood)
-    
-    # println(route)
-    # neighbour = shuffle(route[2:length(route)-1])
-    neighbour = (route[2:length(route)-1])
 
-    # println(neighbour)
+    neighbour = shuffle_route(deepcopy(route))
 
-    deleteat!(neighbour, rand(1:length(neighbour)))
-
-    # if length(neighbour) > neighbourhood
-    #     shaked_part = neighbour[1:neighbourhood]
-    #     deleteat!(neighbour, 1:neighbourhood)
-    #     # println(neighbour)
-
-    #     where = rand(1:length(neighbour))
-    #     # println(where)
-
-    #     shaked_part = append!([neighbour[where]], shaked_part)
-    #     # println(shaked_part)
-
-    #     splice!(neighbour, where, shaked_part)
-    #     # println(neighbour)
-    # end
-
-    neighbour = append!([1], neighbour)
-    push!(neighbour, 1)
-
-
-    if !(respects_maximum_weight(instance, neighbour))
-        while !(respects_maximum_weight(instance, neighbour))
+    while !(respects_maximum_weight(instance, neighbour))
             deleteat!(neighbour, rand(2:length(neighbour)-1))
-        end
     end
 
     return neighbour
 end
 
-function generate_neighbors(instance, current_state)
+function generate_neighbors(instance, current_state, neighbourhood_num)
 
-    aux_neighbourhood = []
-    node_a = 2
-    node_b = length(current_state)-1
+    aux_neighbours_del = []
+    aux_neighbours = []
+    neighbourhood = []
 
-    if 2 - length(current_state) > 0
-        deleteat!(current_state, rand(2:length(current_state)-1))
-    end
-    not_used = not_on_the_route(instance, current_state)
-
-    for j in 2:floor(length(current_state)/2)-1
-        # push!(aux_neighbourhood, two_opt_swap(current_state, node_a, node_b))
-        new_current = two_opt_swap(current_state, node_a, node_b)
-        for i in 2:length(new_current)-1
-            for item in not_used
-                route_part1 = new_current[1:i]
-                route_part2 = new_current[i+1:length(new_current)]
-
-                new_route = append!(route_part1, [item])
-                new_route = append!(new_route, route_part2)
-                # println(new_route)
-                push!(aux_neighbourhood, new_route)   
-            end
-        end
-        node_a += 1
-        node_b -= 1
-    end
-
-    # for i in 1:200
-    #     new_route = shuffle(2:length(current_state)-1)
-    #     new_route = append!([1], new_route)
-    #     push!(new_route, 1)
-    #     push!(aux_neighbourhood, new_route)
+    # for j in 2:length(current_state)-1
+    #     push!(aux_neighbours_del, remove_at(deepcopy(current_state), rand(2:length(current_state)-1)))
     # end
 
-    neighbourhood = []
-    i = 1
+    for j in 1:10
+        push!(aux_neighbours_del, remove_at(deepcopy(current_state), rand(2:length(current_state)-1)))
+        push!(aux_neighbours_del, shuffle_route(deepcopy(current_state)))
+    end
 
-    for neighbour in aux_neighbourhood
-        aux_neighbour = shuffle(neighbour)
-        if respects_maximum_weight(instance, neighbour)
-            push!(neighbourhood, neighbour)
-            # println("temos $i")
-            i += 1
-        end
-
-        if respects_maximum_weight(instance, aux_neighbour)
-            push!(neighbourhood, aux_neighbour)
-            # println("temos $i")
-            i += 1            
+    for item in aux_neighbours_del
+        not_used = not_on_the_route(instance, item)
+        for k in not_used
+            for j in 2:length(item)-1
+                push!(aux_neighbours, insert_at(deepcopy(item), j, k))
+            end
         end
     end
 
-    # println(length(neighbourhood))
+
+    for item in aux_neighbours
+        while !(respects_maximum_weight(instance, item))
+            deleteat!(item, length(item)-1)
+        end
+        push!(neighbourhood, item)
+    end
+
+
     return neighbourhood
 end
 
-function hill_climbing(instance, initial_solution)
+function hill_climbing(instance, initial_solution, max_neighborhoods)
     current_state = initial_solution
     while true
-        neighborhood = generate_neighbors(instance, current_state)
+        neighborhood = generate_neighbors(instance, current_state, max_neighborhoods)
         best_neighbour = current_state
 
         for neighbour in neighborhood
@@ -339,51 +350,51 @@ function hill_climbing(instance, initial_solution)
 
         if route_value(instance, best_neighbour) > route_value(instance, current_state)
             current_state = best_neighbour
+            # println("solucao ate o momento HC: $(route_value(instance, current_state))")
+
         else
             return current_state
         end
     end
 end
 
-# function VND(instance, initial_solution, max_neighborhoods)
-
-#     best_solution = initial_solution
-#     k = 1
-
-#     while k <= max_neighborhoods
-#         best_neighbour = local_search(best_solution)
-
-#         if (route_value(instance, best_neighbour)) < (route_value(instance, best_solution))
-#             best_solution = best_neighbour
-#             k = 1
-#         else
-#             k += 1
-#         end 
-#     end
-#     return best_solution
-# end
+function VND(instance, initial_solution, max_neighborhoods)
+    best_solution = deepcopy(initial_solution)
+    k = 1
+    while k <= max_neighborhoods
+        best_neighbour = hill_climbing(instance, best_solution, k)
+        if (route_value(instance, best_neighbour)) > (route_value(instance, best_solution))
+            best_solution = best_neighbour
+            # println("solucao ate o momento VND: $(route_value(instance, best_solution))")
+            k = 1
+        else
+            k += 1
+        end 
+    end
+    return best_solution
+end
 
 
 function VNS(instance, initial_solution, max_neighborhoods, max_iterations)
+    tic()
     for i in 1:max_iterations
         k = 1
         while k <= max_neighborhoods
-            x1 = shake(instance, initial_solution, k)
-            x2 = hill_climbing(instance, x1)
-            if (route_value(instance, x2)) > (route_value(instance, x1))
+            x1 = shake(instance, deepcopy(initial_solution), k)
+            x2 = VND(instance, x1, k)
+            if (route_value(instance, x2)) > (route_value(instance, initial_solution))
                 initial_solution = x2
+                println("solucao ate o momento VNS: $(route_value(instance, initial_solution))")
                 k = 1
             else
                 k += 1
             end
         end
     end
+    toc()
     return initial_solution
 end
 
-
-
-# srand(1)
 
 inst = parse_file(ARGS[1])
 srand(parse(Int64, ARGS[2]))
@@ -392,10 +403,11 @@ ini_sol = initial_solution_one(inst)
 
 println(ini_sol)
 
-final_sol = VNS(inst, ini_sol, 10, 10)
+final_sol = VNS(inst, ini_sol, 4, 10)
 
 println("ACABOU")
 
 println("SOLUCAO FINAL = $final_sol")
 
 println("VALOR SOLUCAO: $(route_value(inst, final_sol))")
+
