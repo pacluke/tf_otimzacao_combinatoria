@@ -1,0 +1,77 @@
+# Descrição das Instâncias do Orienteering Problem:
+#
+#
+# Todas as instâncias do OP começam com um cabeçalho, contendo informações
+# básicas.
+#
+# Os campos nome (NAME) e comentário (COMMENT) podem ser ignorados. 
+# O tipo (TYPE) é 'OP' para todas as instâncias.
+#
+# O campo dimensão (DIMENSION) indica quantos vértices o grafo de entrada
+# possui. O campo de limite de custo (COST_LIMIT) indica a maior distância 
+# possível que o caminho (solução) pode ter.
+#
+# O tipo de peso das arestas (EDGE_WEIGHT_TYPE) é EUC_2D para todas instâncias
+# contidas nesse grupo. A forma correta de calcular a distância é:
+# 	Dados dois pontos A=(xa, ya) e B=(xb,yb)
+#		xd = xa - xb;
+# 		yd = ya - yb;
+#  		dab = (int)(sqrt( xd*xd + yd*yd) + 0.5);
+#
+#
+# Abaixo um exemplo do cabeçalho das instâncias:
+
+NAME: instancia_exemplo
+TYPE: OP
+COMMENT: um exemplo de instance (INF-UFRGS)
+DIMENSION: 999
+COST_LIMIT : 999
+EDGE_WEIGHT_TYPE: EUC_2D
+
+# Após o cabeçalho, segue a seção de coordenadas dos vértices. Ela inicia com
+# o texto NODE_COORD_SECTION, seguido por N linhas, onde N é o valor lido do 
+# campo DIMENSION. Uma linha por vértice.
+#
+# Cada linha é composta por três valores. O primeiro valor é um inteiro e indica
+# o índice do vértice em questão (os índices começam em 1). O segundo e terceiro
+# valor são dois ponto-flutuantes que indicam a posição x e y do vértice sendo 
+# lido.
+# 
+# Abaixo um exemplo de seção de coordenadas:
+
+NODE_COORD_SECTION
+id1 x1 y1
+id2 x2 y2
+id3 x3 y3
+...
+idN xN yN
+
+# Após a seção de coordenadas, há a seção de pesos dos vértices da instância.
+# A seção começa com o texto NODE_SCORE_SECTION, seguido por N linhas novamente.
+# 
+# Cada linha possui dois inteiros. O primeiro é o índice do vértice, e o segundo
+# é o peso associado a este vértice.
+#
+# Abaixo um exemplo de seção de pesos:
+
+NODE_SCORE_SECTION
+id1 p1
+id2 p2
+id3 p3
+...
+idN pN
+
+# Por fim, há a seção de depósito, que começa com o texto DEPOT_SECTION, seguido
+# por duas linhas: a primeira contém o índice do nó de origem do caminho a ser
+# criado, e a segunda contém o valor -1, indicando que a seção terminou.
+
+DEPOT_SECTION
+1
+-1
+
+# O arquivo termina com um EOF.
+
+EOF
+
+
+
